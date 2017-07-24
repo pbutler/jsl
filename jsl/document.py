@@ -399,7 +399,9 @@ class Document(with_metaclass(DocumentMeta)):
                     role=role, res_scope=res_scope, ordered=ordered, ref_documents=ref_documents)
                 parent_definition_id = parent_document.get_definition_id()
                 definitions.update(parent_definitions)
-                definitions[parent_definition_id] = parent_schema
+                if not (isinstance(parent_schema, dict)
+                        and "$ref" in parent_schema):
+                    definitions[parent_definition_id] = parent_schema
                 contents.append(res_scope.create_ref(parent_definition_id))
             contents.append(schema)
             schema = {mode: contents}

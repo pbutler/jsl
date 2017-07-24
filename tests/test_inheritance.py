@@ -2,7 +2,7 @@
 import pytest
 
 from jsl import (
-    NumberField, IntField, DocumentField, StringField, BooleanField,
+    NumberField, IntField, DocumentField, StringField, BooleanField, OneOfField,
     Document, ALL_OF, INLINE, ANY_OF, ONE_OF, RECURSIVE_REFERENCE_CONSTANT
 )
 from util import normalize
@@ -403,4 +403,73 @@ def test_nested_inheritance_inline_parent():
         '$ref': '#/definitions/child'
     }
     schema = Child.get_schema()
+    assert normalize(schema) == normalize(expected_schema)
+
+
+def test_nested_inheritance_mixed_one_of():
+    class Base(Document):
+        children = OneOfField([
+            DocumentField("Top", as_ref=True),
+            DocumentField("Child", as_ref=True),
+        ])
+
+    class Child(Base):
+        class Options:
+            definition_id = "Child"
+        a = StringField(required=True)
+
+    class Top(Base):
+        class Options:
+            definition_id = "Top"
+        b = StringField(required=True)
+
+    class Any(Top, Child):
+        class Options:
+            definition_id = "Any"
+            inheritance_mode = ONE_OF
+
+    expected_schema = {
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        'definitions': {
+            'Top': {
+                'type': 'object',
+                'properties': {
+                    'children': {
+                        'oneOf': [
+                            {'$ref': '#/definitions/Top'},
+                            {'$ref': '#/definitions/Child'}
+                        ]
+                    },
+                    'b': {'type': 'string'}
+                },
+                'required': ['b'],
+                'additionalProperties': False
+            },
+            'Child': {
+                'type': 'object',
+                'properties': {
+                    'children': {
+                        'oneOf': [
+                            {'$ref': '#/definitions/Top'},
+                            {'$ref': '#/definitions/Child'}
+                        ]
+                    },
+                    'a': {'type': 'string'}
+                },
+                'required': ['a'],
+                'additionalProperties': False
+            }
+        },
+        'oneOf': [
+            {'$ref': '#/definitions/Child'},
+            {'$ref': '#/definitions/Top'},
+            {
+                'type': 'object',
+                'properties': {},
+                'additionalProperties': False
+            }
+        ]
+    }
+
+    schema = Any.get_schema()
     assert normalize(schema) == normalize(expected_schema)
