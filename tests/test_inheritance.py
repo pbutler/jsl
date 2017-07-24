@@ -473,3 +473,62 @@ def test_nested_inheritance_mixed_one_of():
 
     schema = Any.get_schema()
     assert normalize(schema) == normalize(expected_schema)
+
+
+def test_recursive_inheritance_with_base():
+    class Base(Document):
+        children = DocumentField("Any", as_ref=True)
+
+    class A(Base):
+        class Options:
+            definition_id = "A"
+        a = StringField(required=True)
+
+    class B(Base):
+        class Options:
+            definition_id = "B"
+        b = StringField(required=True)
+
+    class Any(A, B):
+        class Options:
+            definition_id = "Any"
+            inheritance_mode = ONE_OF
+
+    expected_schema = {
+        '$schema': 'http://json-schema.org/draft-04/schema#',
+        'definitions': {
+            'A': {
+                'type': 'object',
+                'properties': {
+                    'children': {'$ref': '#/definitions/Any'},
+                    'a': {'type': 'string'}
+                },
+                'required': ['a'],
+                'additionalProperties': False
+            },
+            'B': {
+                'type': 'object',
+                'properties': {
+                    'children': {'$ref': '#/definitions/Any'},
+                    'b': {'type': 'string'}
+                },
+                'required': ['b'],
+                'additionalProperties': False
+            },
+            'Any': {
+                'oneOf': [
+                    {'$ref': '#/definitions/A'},
+                    {'$ref': '#/definitions/B'},
+                    {
+                        'type': 'object',
+                        'properties': {},
+                        'additionalProperties': False
+                    }
+                ]
+            }
+        },
+        '$ref': '#/definitions/Any'
+    }
+
+    schema = Any.get_schema()
+    assert normalize(schema) == normalize(expected_schema)

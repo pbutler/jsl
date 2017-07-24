@@ -248,10 +248,17 @@ class Document(with_metaclass(DocumentMeta)):
 
         :param str role: A current role.
         """
+        for pcls in cls.__bases__:
+            for field in pcls.resolve_and_walk(through_document_fields=True,
+                                               role=role, visited_documents=set([pcls])):
+                if isinstance(field, DocumentField):
+                    if field.document_cls == cls or issubclass(field.document_cls, cls):
+                        return True
+
         for field in cls.resolve_and_walk(through_document_fields=True,
                                           role=role, visited_documents=set([cls])):
             if isinstance(field, DocumentField):
-                if field.document_cls == cls:
+                if field.document_cls == cls or issubclass(field.document_cls, cls):
                     return True
         return False
 
