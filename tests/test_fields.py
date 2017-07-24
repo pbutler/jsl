@@ -79,7 +79,7 @@ def test_string_field():
 
     with pytest.raises(ValueError) as e:
         fields.StringField(pattern='(')
-    assert str(e.value) == 'Invalid regular expression: unbalanced parenthesis'
+    assert str(e.value).startswith('Invalid regular expression:')
 
 
 def test_string_derived_fields():

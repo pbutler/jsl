@@ -206,7 +206,8 @@ def test_dict_field():
     with pytest.raises(SchemaGenerationException) as e:
         f.get_schema()
     e = e.value
-    assert 'unbalanced parenthesis' in e.message
+    assert ('unbalanced parenthesis' in e.message or
+            'Invalid regular expression: missing )' in e.message)
     assert list(e.steps) == [FieldStep(f), AttributeStep('pattern_properties')]
 
 

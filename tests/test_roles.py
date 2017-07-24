@@ -230,7 +230,7 @@ def test_string_field():
 
     with pytest.raises(ValueError) as e:
         StringField(pattern=_('('))
-    assert str(e.value) == 'Invalid regular expression: unbalanced parenthesis'
+    assert str(e.value).startswith('Invalid regular expression:')
 
 
 def test_array_field():
